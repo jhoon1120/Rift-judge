@@ -1,27 +1,34 @@
 # Rift Judge
 
-Table-side helper for **Riftbound** TCG rulings and card interactions.
+Table-side helper for **Riftbound** TCG rulings and board-state checks.
 
-Type a question, card name, or keyword to search:
+## Modes
 
-- FAQ rulings (from [Riftbound FAQ](https://www.riftboundfaq.com), CC BY-SA 4.0)
-- Card rules text
-- Core Rules citations
+### Ask a ruling
+Type a question, card name, or keyword to search FAQ rulings, card text, and Core Rules citations.
 
-## Develop
+### Board check
+Build the board (zones + phase + situation), optionally upload a photo, then **Analyze interactions** for timing risks, keyword clashes, Deathknell/Flow/counter issues, and linked FAQ answers.
+
+Photo vision uses `OPENAI_API_KEY` when set; without it, use the board builder + situation text (fully offline heuristics).
+
+## Run locally
 
 ```bash
 npm install
-npm run dev
+npm run build
+npm start
+# open http://127.0.0.1:3000
 ```
+
+Dev: `npm run dev`
 
 ## Data
 
-`public/data/index.json` is built from community card catalogs and FAQ rulings. Regenerate with:
+`public/data/{meta,cards,rulings,rules}.json` is built from community catalogs and FAQ rulings:
 
 ```bash
-# from project root after refreshing data/cards.json, data/rulings.json, data/core-rules.json
 node scripts/build-index.mjs
 ```
 
-Unofficial helper. Official Riftbound Core Rules always take precedence. Riftbound © Riot Games.
+Rulings from [Riftbound FAQ](https://www.riftboundfaq.com) (CC BY-SA 4.0). Unofficial helper—official Core Rules always win. Riftbound © Riot Games.
