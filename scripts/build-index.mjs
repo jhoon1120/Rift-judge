@@ -117,7 +117,11 @@ const out = {
   rules,
 };
 
-const outPath = join(root, "public/data/index.json");
-mkdirSync(dirname(outPath), { recursive: true });
-writeFileSync(outPath, JSON.stringify(out));
-console.log(`wrote ${outPath} (${cards.length} cards, ${rulings.length} rulings, ${rules.length} rules)`);
+const dir = join(root, "public/data");
+mkdirSync(dir, { recursive: true });
+writeFileSync(join(dir, "index.json"), JSON.stringify(out));
+writeFileSync(join(dir, "meta.json"), JSON.stringify(out.meta));
+writeFileSync(join(dir, "cards.json"), JSON.stringify(out.cards));
+writeFileSync(join(dir, "rulings.json"), JSON.stringify(out.rulings));
+writeFileSync(join(dir, "rules.json"), JSON.stringify(out.rules));
+console.log(`wrote ${dir} (${cards.length} cards, ${rulings.length} rulings, ${rules.length} rules)`);

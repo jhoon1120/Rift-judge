@@ -202,11 +202,16 @@ export default function RiftJudgeApp() {
       )}
 
       {!index && !error && (
-        <div className="loading-bar mb-6 rounded-full" aria-label="Loading rules data" />
+        <div className="mb-6 space-y-2" aria-label="Loading rules data">
+          <div className="loading-bar rounded-full" />
+          <p className="text-center text-xs" style={{ color: "var(--cream-dim)" }}>
+            Loading cards, FAQ rulings, and Core Rules…
+          </p>
+        </div>
       )}
       {error && (
         <p className="mb-4 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: "var(--danger)", color: "var(--danger)" }}>
-          {error}
+          {error}. Refresh the page, or restart with <code>npm run build && npm start</code>.
         </p>
       )}
 

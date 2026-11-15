@@ -3,22 +3,29 @@ import type { AppIndex } from "./types";
 let cache: AppIndex | null = null;
 let pending: Promise<AppIndex> | null = null;
 
+async function fetchJson<T>(path: string): Promise<T> {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(`Failed to load ${path} (${res.status})`);
+  return res.json() as Promise<T>;
+}
+
 export async function loadIndex(): Promise<AppIndex> {
   if (cache) return cache;
   if (pending) return pending;
-  pending = fetch("/data/index.json")
-    .then((res) => {
-      if (!res.ok) throw new Error(`Failed to load index (${res.status})`);
-      return res.json() as Promise<AppIndex>;
-    })
-    .then((data) => {
+  pending = (async () => {
+    try {
+      const [meta, cards, rulings, rules] = await Promise.all([
+        fetchJson<AppIndex["meta"]>("/data/meta.json"),
+        fetchJson<AppIndex["cards"]>("/data/cards.json"),
+        fetchJson<AppIndex["rulings"]>("/data/rulings.json"),
+        fetchJson<AppIndex["rules"]>("/data/rules.json"),
+      ]);
+      const data: AppIndex = { meta, cards, rulings, rules };
       cache = data;
-      pending = null;
       return data;
-    })
-    .catch((err) => {
+    } finally {
       pending = null;
-      throw err;
-    });
+    }
+  })();
   return pending;
 }
