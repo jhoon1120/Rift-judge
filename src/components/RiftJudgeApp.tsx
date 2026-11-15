@@ -1,6 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import BoardAnalyzer from "@/components/BoardAnalyzer";
 import { loadIndex } from "@/lib/data";
 import {
   QUICK_TOPICS,
@@ -10,6 +11,8 @@ import {
   searchIndex,
 } from "@/lib/search";
 import type { AppIndex, Card, Ruling, Rule, SearchHit } from "@/lib/types";
+
+type Mode = "ask" | "board";
 
 type Panel =
   | { type: "home" }
@@ -42,6 +45,7 @@ function ResultIcon({ kind }: { kind: SearchHit["kind"] }) {
 export default function RiftJudgeApp() {
   const [index, setIndex] = useState<AppIndex | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>("ask");
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [panel, setPanel] = useState<Panel>({ type: "home" });
@@ -99,13 +103,15 @@ export default function RiftJudgeApp() {
   }
 
   function applyTopic(q: string) {
-    setQuery(q);
-    setPanel({ type: "home" });
+    startTransition(() => {
+      setPanel({ type: "home" });
+      setQuery(q);
+    });
   }
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 pb-16 pt-8 sm:px-6">
-      <header className="rise mb-8 text-center">
+      <header className="rise mb-6 text-center">
         <p
           className="mb-3 text-[11px] font-semibold uppercase tracking-[0.28em]"
           style={{ color: "var(--ember)" }}
@@ -119,10 +125,44 @@ export default function RiftJudgeApp() {
           Rift Judge
         </h1>
         <p className="rise rise-delay-1 mx-auto mt-4 max-w-md text-[15px] leading-relaxed" style={{ color: "var(--cream-dim)" }}>
-          Ask a card interaction. Get FAQ answers, card text, and Core Rules citations—fast.
+          Ask a ruling, or build the board and check whether an interaction is legal.
         </p>
       </header>
 
+      <div
+        className="rise rise-delay-1 mb-5 flex justify-center gap-1 rounded-full border p-1"
+        style={{ borderColor: "var(--line)", background: "rgba(16,24,38,0.65)" }}
+        role="tablist"
+        aria-label="Mode"
+      >
+        {(
+          [
+            { id: "ask" as const, label: "Ask a ruling" },
+            { id: "board" as const, label: "Board check" },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={mode === tab.id}
+            onClick={() => {
+              setMode(tab.id);
+              setPanel({ type: "home" });
+            }}
+            className="min-w-[8.5rem] flex-1 rounded-full px-4 py-2 text-sm font-medium transition"
+            style={{
+              background: mode === tab.id ? "var(--ember-soft)" : "transparent",
+              color: mode === tab.id ? "var(--cream)" : "var(--cream-dim)",
+              boxShadow: mode === tab.id ? "inset 0 0 0 1px rgba(224,161,43,0.45)" : "none",
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {mode === "ask" && (
       <div className="rise rise-delay-2 sticky top-3 z-20 mb-5">
         <label className="ask-shell flex items-start gap-3 rounded-2xl border px-4 py-3 backdrop-blur-md"
           style={{
@@ -159,6 +199,7 @@ export default function RiftJudgeApp() {
           )}
         </label>
       </div>
+      )}
 
       {!index && !error && (
         <div className="loading-bar mb-6 rounded-full" aria-label="Loading rules data" />
@@ -169,8 +210,8 @@ export default function RiftJudgeApp() {
         </p>
       )}
 
-      {index && panel.type === "home" && !showResults && (
-        <section className="rise rise-delay-3 space-y-6">
+      {index && mode === "ask" && panel.type === "home" && (
+        <section className={`space-y-6 ${showResults ? "mb-2" : "rise rise-delay-3"}`}>
           <div className="flex flex-wrap justify-center gap-2">
             {QUICK_TOPICS.map((topic) => (
               <button
@@ -178,12 +219,23 @@ export default function RiftJudgeApp() {
                 type="button"
                 onClick={() => applyTopic(topic.query)}
                 className="rounded-full border px-3 py-1.5 text-sm transition hover:border-[rgba(224,161,43,0.5)]"
-                style={{ borderColor: "var(--line)", background: "rgba(239,230,210,0.03)", color: "var(--cream)" }}
+                style={{
+                  borderColor:
+                    deferredQuery.trim().toLowerCase() === topic.query
+                      ? "rgba(224,161,43,0.55)"
+                      : "var(--line)",
+                  background:
+                    deferredQuery.trim().toLowerCase() === topic.query
+                      ? "var(--ember-soft)"
+                      : "rgba(239,230,210,0.03)",
+                  color: "var(--cream)",
+                }}
               >
                 {topic.label}
               </button>
             ))}
           </div>
+          {!showResults && (
 
           <div
             className="rounded-2xl border px-5 py-5"
@@ -202,11 +254,16 @@ export default function RiftJudgeApp() {
               {index.meta.rulesVersion ?? "current"} · Unofficial helper; official rules win.
             </p>
           </div>
+          )}
         </section>
       )}
 
-      {index && panel.type === "home" && showResults && (
-        <div className="space-y-6">
+      {index && mode === "board" && panel.type === "home" && (
+        <BoardAnalyzer index={index} onOpenCard={openCard} onOpenRuling={openRuling} />
+      )}
+
+      {index && mode === "ask" && panel.type === "home" && showResults && (
+        <div className="mt-4 space-y-6">
           {(mentioned.length > 0 || pinned.length > 0) && (
             <section>
               <div className="mb-2 flex items-center justify-between">
@@ -379,7 +436,7 @@ export default function RiftJudgeApp() {
         />
       )}
 
-      {index && pinned.length > 0 && panel.type === "home" && showResults && (
+      {index && mode === "ask" && pinned.length > 0 && panel.type === "home" && showResults && (
         <section className="mt-8 space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--cream-dim)" }}>
             Pinned comparison
@@ -453,7 +510,7 @@ function BackButton({ onBack }: { onBack: () => void }) {
     <button
       type="button"
       onClick={onBack}
-      className="mb-4 text-sm"
+      className="mb-4 block text-sm"
       style={{ color: "var(--ember)" }}
     >
       ← Back to results

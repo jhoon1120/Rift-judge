@@ -15,9 +15,9 @@ const body = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "Rift Judge — Riftbound rulings",
+  title: "Rift Judge — Riftbound rulings & board checks",
   description:
-    "Quick table-side helper for Riftbound TCG rulings, card interactions, FAQ answers, and Core Rules citations.",
+    "Table-side Riftbound helper: ask rulings, search FAQ and Core Rules, and analyze board states for legal or illegal interactions.",
   applicationName: "Rift Judge",
   appleWebApp: {
     capable: true,
